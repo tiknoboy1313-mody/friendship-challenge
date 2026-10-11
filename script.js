@@ -267,8 +267,33 @@ async function refreshAdmin() {
     const del = document.createElement('button'); del.className = 'btn btn-ghost'; del.textContent = 'حذف'; del.onclick = async () => { if (!confirm('متأكد إنك عايز تحذف السؤال؟ الاختبارات القديمة ستظل محتفظة بنسخة أسئلتها.')) return; try { await rpc('fc_admin_delete_question', { p_id: q.id }); toast('تم حذف السؤال.'); await refreshAdmin(); } catch (e) { toast(niceError(e)); } };
     actions.append(moveUp, moveDown, edit, del); top.append(title, actions);
     const kind = ({single:'اختيار واحد',multiple:'اختيارات متعددة',text:'إجابة قصيرة',true_false:'صح أو غلط'})[q.type || q.question_type || 'single'] || 'اختيار واحد';
-    const opts = document.createElement('p'); opts.className = 'admin-options'; opts.textContent = `النوع: ${kind}${(q.options || []).length ? ' — ' + q.options.join(' • ') : ''}`;
-    item.append(top, opts); questions.append(item);
+    
+const opts = document.createElement('p');
+opts.className = 'admin-options';
+opts.textContent =
+  `النوع: ${kind}` +
+  ((q.options || []).length
+    ? ' — ' + q.options.join(' • ')
+    : '');
+
+const creatorAnswers = q.creator_answers || q.answers || {};
+const answersLine = document.createElement('p');
+answersLine.className = 'admin-options';
+
+answersLine.textContent =
+  'إجابات المنشئ: ' +
+  (Object.keys(creatorAnswers).length
+    ? Object.entries(creatorAnswers).map(([id, answer]) => {
+        const question = (q.question_snapshot || [])
+          .find(x => String(x.id) === String(id));
+        return `${question?.text || id}: ${
+          Array.isArray(answer) ? answer.join('، ') : answer
+        }`;
+      }).join(' | ')
+    : 'الإجابات غير موجودة في بيانات الأدمن المستلمة.');
+
+item.append(top, opts, answersLine);
+
   });
   const quizzes = $('#adminQuizzes'); quizzes.innerHTML = '';
   if (!data.quizzes?.length) quizzes.innerHTML = '<div class="loading">لا توجد اختبارات حتى الآن.</div>';
