@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#09060f" />
+  <title>Friendship Challenge 💗</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="Friendship Challenge"><span class="brand-icon">✦</span> Friendship <b>Challenge</b></a>
+    <button id="adminOpen" class="btn btn-ghost btn-small">لوحة الأدمن</button>
+  </header>
+
+  <main class="shell">
+    <section id="home" class="page active">
+      <div class="hero">
+        <div class="eyebrow"><span class="pulse-dot"></span> اختبروا صداقتكم</div>
+        <h1>مين <span class="gradient-text">يعرفك أكتر؟</span></h1>
+        <p class="lead">جاوب عن أسئلتك، ابعت الرابط لأصحابك، وشوف مين الأقرب لشخصيتك 💗</p>
+        <div class="hero-actions"><button id="startCreate" class="btn btn-primary">✨ إنشاء اختبار جديد</button><button id="howBtn" class="btn btn-ghost">إزاي بتشتغل؟</button></div>
+        <div class="stats"><div><strong>20</strong><span>سؤالًا</span></div><i></i><div><strong>∞</strong><span>تحديات</span></div><i></i><div><strong>100%</strong><span>مرح</span></div></div>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card"><span class="feature-icon">📝</span><h3>جاوب بطريقتك</h3><p>اختار إجاباتك عن 20 سؤالًا ثابتًا.</p></article>
+        <article class="feature-card"><span class="feature-icon">🔗</span><h3>شارك الرابط</h3><p>خلي أصحابك يجاوبوا من موبايلاتهم.</p></article>
+        <article class="feature-card"><span class="feature-icon">💯</span><h3>اعرف النتيجة</h3><p>شوف نسبة تطابق كل صديق معاك.</p></article>
+      </div>
+      <p class="tiny-note">الأسئلة يديرها الأدمن فقط. إجابات كل اختبار مستقلة عن الاختبارات الأخرى.</p>
+    </section>
+
+    <section id="creator" class="page">
+      <div class="section-heading"><span class="step-tag">01 / إنشاء</span><h2>خلّينا نعرفك! <span class="pink">💗</span></h2><p>اكتب اسمك وجاوب عن الأسئلة العشرين، وبعدها هتاخد رابط اختبارك.</p></div>
+      <form id="creatorForm" class="panel">
+        <label class="field-label" for="creatorName">اسمك</label><input id="creatorName" class="input" maxlength="80" required placeholder="اكتب اسمك هنا" />
+        <div class="progress-wrap"><div class="progress-meta"><span>إجاباتك</span><span id="creatorProgressText">0 / 20</span></div><div class="progress-track"><div id="creatorProgress" class="progress-fill"></div></div></div>
+        <div id="creatorQuestions" class="questions-list"><div class="loading">جاري تحميل الأسئلة…</div></div>
+        <button class="btn btn-primary btn-wide" type="submit">إنشاء الاختبار 🚀</button>
+        <button type="button" class="btn btn-ghost btn-wide new-test-link" data-go="home">رجوع للرئيسية</button>
+      </form>
+    </section>
+
+    <section id="created" class="page">
+      <div class="success-mark">✓</div><div class="section-heading center"><span class="step-tag">02 / جاهز</span><h2>اختبارك جاهز! 🎉</h2><p>ابعت رابط المشاركة لأصحابك، واحتفظ برابط النتائج لنفسك.</p></div>
+      <div class="panel link-panel"><label class="field-label">رابط الأصدقاء</label><div class="copy-row"><input id="shareLink" class="input" readonly /><button id="copyShare" class="btn btn-primary">نسخ</button></div><p class="hint">أي شخص معه الرابط يقدر يشارك في الاختبار.</p>
+        <label class="field-label spaced">رابط النتائج الخاص بك</label><div class="copy-row"><input id="ownerLink" class="input" readonly /><button id="copyOwner" class="btn btn-secondary">نسخ</button></div><p class="hint warning">خلي الرابط ده لنفسك؛ أي شخص يمتلكه يمكنه مشاهدة أسماء المشاركين ونسبهم.</p>
+        <button id="openOwner" class="btn btn-primary btn-wide">عرض النتائج</button><button class="btn btn-ghost btn-wide new-test-link" data-go="creator">إنشاء اختبار جديد +</button>
+      </div>
+    </section>
+
+    <section id="play" class="page">
+      <div class="section-heading"><span class="step-tag">تحدّي الصداقة</span><h2>ورّينا هتعرفه قد إيه! ✨</h2><p id="playSubtitle">جاوب عن الأسئلة واكتشف نسبة تطابقك.</p></div>
+      <form id="friendForm" class="panel"><label class="field-label" for="friendName">اسمك الثنائي</label><input id="friendName" class="input" maxlength="80" required placeholder="الاسم الأول واسم العائلة" />
+        <div class="progress-wrap"><div class="progress-meta"><span>إجاباتك</span><span id="friendProgressText">0 / 20</span></div><div class="progress-track"><div id="friendProgress" class="progress-fill"></div></div></div>
+        <div id="friendQuestions" class="questions-list"><div class="loading">جاري تحميل الأسئلة…</div></div>
+        <button class="btn btn-primary btn-wide" type="submit">إرسال الإجابات 💌</button><button type="button" class="btn btn-ghost btn-wide new-test-link" data-go="creator">إنشاء اختبار جديد +</button>
+      </form>
+    </section>
+
+    <section id="result" class="page"><div class="section-heading center"><span class="step-tag">نتيجتك</span><h2>تم إرسال إجاباتك! 💌</h2><p>شكرًا لمشاركتك في التحدي.</p></div>
+      <div class="panel result-card"><div class="result-ring" id="friendScoreRing"><div><strong id="friendScore">--%</strong><span>نسبة التطابق</span></div></div><h3 id="friendResultTitle">نتيجتك جاهزة</h3><p id="friendResultText">احتفظ بالنتيجة وشارك في تحديات أخرى.</p><button id="confirmResult" class="btn btn-primary btn-wide">تأكيد ✓</button><button class="btn btn-ghost btn-wide new-test-link" data-go="creator">إنشاء اختبار جديد +</button></div>
+    </section>
+
+    <section id="ownerResults" class="page"><div class="section-heading"><span class="step-tag">لوحة النتائج</span><h2>أصحابك قالوا إيه؟ 💖</h2><p id="ownerGreeting">نتائج اختبارك تظهر هنا.</p></div><div class="panel"><div class="results-summary"><div><strong id="participantCount">0</strong><span>مشارك</span></div><div><strong id="averageScore">--%</strong><span>متوسط التطابق</span></div></div><div id="ownerResultsList" class="results-list"><div class="loading">جاري تحميل النتائج…</div></div><button class="btn btn-ghost btn-wide new-test-link" data-go="creator">إنشاء اختبار جديد +</button></div></section>
+
+    <section id="admin" class="page"><div class="section-heading"><span class="step-tag">إدارة الموقع</span><h2>لوحة الأدمن <span class="pink">⚙</span></h2><p>الدخول بحساب الأدمن المسجّل في Supabase.</p></div>
+      <form id="adminLoginForm" class="panel"><label class="field-label" for="adminEmail">البريد الإلكتروني</label><input id="adminEmail" class="input" type="email" required autocomplete="username" placeholder="admin@example.com" /><label class="field-label spaced" for="adminPassword">كلمة المرور</label><input id="adminPassword" class="input" type="password" required autocomplete="current-password" placeholder="كلمة المرور" /><button class="btn btn-primary btn-wide" type="submit">دخول آمن</button><p id="adminLoginMessage" class="hint"></p></form>
+      <div id="adminDashboard" class="hidden">
+        <div class="admin-toolbar"><h3>بنك الأسئلة</h3><button id="addQuestion" class="btn btn-secondary btn-small">+ سؤال جديد</button></div><p class="hint admin-help">تقدر تضيف اختيار واحد، اختيارات متعددة، إجابة قصيرة، أو صح/غلط. استخدم ↑ و↓ لتغيير ترتيب الأسئلة.</p><div id="adminQuestions" class="admin-list panel"></div>
+        <div class="admin-toolbar"><h3>الاختبارات والمشاركات</h3><button id="refreshAdmin" class="btn btn-ghost btn-small">تحديث ↻</button></div><div id="adminQuizzes" class="admin-list panel"></div>
+        <button id="adminLogout" class="btn btn-ghost btn-wide">تسجيل الخروج</button>
+      </div>
+      <button class="btn btn-ghost btn-wide new-test-link" data-go="creator">إنشاء اختبار جديد +</button>
+    </section>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
+  <footer><span>Made with <b>♥</b> for best friends</span><a href="#home">Friendship Challenge</a></footer>
+</body>
+</html>
