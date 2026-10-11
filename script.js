@@ -1066,5 +1066,12 @@ if (!sb) {
     'Friendship Challenge: تحقق من رابط Supabase والمفتاح العام.'
   );
 }
+const adminBackHome = $('#adminBackHome');
+
+if (adminBackHome) {
+  adminBackHome.addEventListener('click', () => {
+    navigate('home');
+  });
+}
 
 routeFromHash();
