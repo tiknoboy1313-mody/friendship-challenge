@@ -1,6 +1,6 @@
 
 /* Friendship Challenge
-   Supabase + Admin Question Ordering
+   Supabase + Admin Question Ordering + Home Buttons
 */
 
 const SUPABASE_URL = 'https://evngjmpneiakkoyiwkut.supabase.co';
@@ -34,6 +34,7 @@ let adminBusy = false;
 
 function toast(message) {
   const el = $('#toast');
+
   if (!el) {
     alert(message);
     return;
@@ -110,7 +111,9 @@ async function rpc(name, params = {}) {
 
   const { data, error } = await sb.rpc(name, params);
 
-  if (error) throw new Error(error.message || 'حدث خطأ في الاتصال.');
+  if (error) {
+    throw new Error(error.message || 'حدث خطأ في الاتصال.');
+  }
 
   return data;
 }
@@ -138,11 +141,13 @@ function setProgress(type) {
   }).length;
 
   const total = activeQuestions.length;
-
   const textEl = $(`#${type}ProgressText`);
   const progressEl = $(`#${type}Progress`);
 
-  if (textEl) textEl.textContent = `${count} / ${total}`;
+  if (textEl) {
+    textEl.textContent = `${count} / ${total}`;
+  }
+
   if (progressEl) {
     progressEl.style.width = `${total ? count / total * 100 : 0}%`;
   }
@@ -155,7 +160,8 @@ function renderQuestions(target, questions, type) {
   root.innerHTML = '';
 
   if (!questions.length) {
-    root.innerHTML = '<div class="loading">لا توجد أسئلة متاحة حاليًا.</div>';
+    root.innerHTML =
+      '<div class="loading">لا توجد أسئلة متاحة حاليًا.</div>';
     return;
   }
 
@@ -195,7 +201,11 @@ function renderQuestions(target, questions, type) {
       const options = document.createElement('div');
       options.className = 'options-grid';
 
-      (q.options || []).forEach((option, oi) => {
+      const questionOptions = questionType === 'true_false'
+        ? ['صح', 'غلط']
+        : (q.options || []);
+
+      questionOptions.forEach((option, oi) => {
         const label = document.createElement('label');
         label.className = 'option-label';
 
@@ -203,7 +213,6 @@ function renderQuestions(target, questions, type) {
         input.type = questionType === 'multiple' ? 'checkbox' : 'radio';
         input.name = `${type}-${q.id}`;
         input.value = option;
-
         input.required = questionType !== 'multiple' && oi === 0;
 
         input.addEventListener('change', () => {
@@ -240,11 +249,21 @@ function collectAnswers(rootSelector, questions, type) {
   const root = $(rootSelector);
   const answers = {};
 
+  if (!root) {
+    toast('تعذر العثور على قسم الأسئلة.');
+    return null;
+  }
+
   for (const q of questions) {
     const card = $(
       `.question-card[data-question-id="${q.id}"]`,
       root
     );
+
+    if (!card) {
+      toast('تعذر تحميل أحد الأسئلة. أعد تحميل الصفحة.');
+      return null;
+    }
 
     const questionType = q.type || q.question_type || 'single';
 
@@ -270,7 +289,7 @@ function collectAnswers(rootSelector, questions, type) {
 
       if (!selected.length) {
         toast(`اختار إجابة واحدة على الأقل للسؤال: ${q.text}`);
-        card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return null;
       }
 
@@ -282,7 +301,7 @@ function collectAnswers(rootSelector, questions, type) {
 
     if (!selected) {
       toast(`جاوب عن السؤال: ${q.text}`);
-      card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return null;
     }
 
@@ -304,6 +323,7 @@ async function loadPublicQuestions() {
   }
 
   activeQuestions = data;
+
   renderQuestions('#creatorQuestions', activeQuestions, 'creator');
   setProgress('creator');
 }
@@ -312,13 +332,17 @@ async function startCreator() {
   showPage('creator');
 
   const root = $('#creatorQuestions');
-  if (root) root.innerHTML = '<div class="loading">جاري تحميل الأسئلة…</div>';
+
+  if (root) {
+    root.innerHTML = '<div class="loading">جاري تحميل الأسئلة…</div>';
+  }
 
   try {
     await loadPublicQuestions();
   } catch (e) {
     if (root) {
-      root.innerHTML = `<div class="loading">${escapeHtml(niceError(e))}</div>`;
+      root.innerHTML =
+        `<div class="loading">${escapeHtml(niceError(e))}</div>`;
     }
 
     toast(niceError(e));
@@ -336,6 +360,13 @@ async function handleCreateQuiz(event) {
   }
 
   const name = $('#creatorName').value.trim();
+
+  if (!name) {
+    toast('اكتب اسمك أولًا.');
+    $('#creatorName').focus();
+    return;
+  }
+
   const answers = collectAnswers(
     '#creatorQuestions',
     activeQuestions,
@@ -382,8 +413,11 @@ async function loadPlay(code) {
   currentShareCode = code;
   showPage('play');
 
-  $('#friendQuestions').innerHTML =
-    '<div class="loading">جاري تحميل الأسئلة…</div>';
+  const root = $('#friendQuestions');
+
+  if (root) {
+    root.innerHTML = '<div class="loading">جاري تحميل الأسئلة…</div>';
+  }
 
   try {
     const data = await rpc('fc_quiz_questions', {
@@ -398,8 +432,10 @@ async function loadPlay(code) {
     renderQuestions('#friendQuestions', activeQuestions, 'friend');
     setProgress('friend');
   } catch (e) {
-    $('#friendQuestions').innerHTML =
-      `<div class="loading">${escapeHtml(niceError(e))}</div>`;
+    if (root) {
+      root.innerHTML =
+        `<div class="loading">${escapeHtml(niceError(e))}</div>`;
+    }
 
     toast(niceError(e));
   }
@@ -409,6 +445,11 @@ async function handleFriendSubmit(event) {
   event.preventDefault();
 
   if (!requireConfig()) return;
+
+  if (!currentShareCode) {
+    toast('رابط الاختبار غير صالح. افتح رابط صديقك مرة أخرى.');
+    return;
+  }
 
   const name = $('#friendName').value.trim();
 
@@ -437,7 +478,10 @@ async function handleFriendSubmit(event) {
       p_answers: answers
     });
 
-    const score = Number(lastFriendResult.score) || 0;
+    const score = Math.max(
+      0,
+      Math.min(100, Number(lastFriendResult.score) || 0)
+    );
 
     $('#friendScore').textContent = `${score}%`;
 
@@ -471,8 +515,11 @@ async function loadOwnerResults(token) {
   currentOwnerToken = token;
   showPage('ownerResults');
 
-  $('#ownerResultsList').innerHTML =
-    '<div class="loading">جاري تحميل النتائج…</div>';
+  const root = $('#ownerResultsList');
+
+  if (root) {
+    root.innerHTML = '<div class="loading">جاري تحميل النتائج…</div>';
+  }
 
   try {
     const data = await rpc('fc_owner_results', {
@@ -485,7 +532,8 @@ async function loadOwnerResults(token) {
     $('#participantCount').textContent = data.participant_count;
     $('#averageScore').textContent = `${data.average_score}%`;
 
-    const root = $('#ownerResultsList');
+    if (!root) return;
+
     root.innerHTML = '';
 
     if (!data.results?.length) {
@@ -500,7 +548,8 @@ async function loadOwnerResults(token) {
 
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
-      avatar.textContent = (person.name || '?').trim().charAt(0) || '?';
+      avatar.textContent =
+        (person.name || '?').trim().charAt(0) || '?';
 
       const info = document.createElement('div');
       info.className = 'result-person';
@@ -521,8 +570,10 @@ async function loadOwnerResults(token) {
       root.append(row);
     });
   } catch (e) {
-    $('#ownerResultsList').innerHTML =
-      `<div class="loading">${escapeHtml(niceError(e))}</div>`;
+    if (root) {
+      root.innerHTML =
+        `<div class="loading">${escapeHtml(niceError(e))}</div>`;
+    }
 
     toast(niceError(e));
   }
@@ -591,7 +642,10 @@ function questionEditor(question = null) {
 
     if (raw === null) return;
 
-    options = raw.split('|').map(s => s.trim()).filter(Boolean);
+    options = raw
+      .split('|')
+      .map(s => s.trim())
+      .filter(Boolean);
 
     if (options.length < 2 || options.length > 8) {
       toast('أضف من اختيارين إلى 8 اختيارات.');
@@ -632,29 +686,28 @@ async function moveQuestion(index, direction) {
   adminBusy = true;
 
   try {
-    // تحميل أحدث ترتيب من قاعدة البيانات
     const data = await rpc('fc_admin_data');
     const ordered = [...(data.questions || [])];
 
     const target = index + direction;
 
-    if (index < 0 || index >= ordered.length ||
-        target < 0 || target >= ordered.length) {
+    if (
+      index < 0 ||
+      index >= ordered.length ||
+      target < 0 ||
+      target >= ordered.length
+    ) {
       return;
     }
 
-    // تبديل السؤال بمكان السؤال المجاور
     [ordered[index], ordered[target]] =
       [ordered[target], ordered[index]];
 
-    // حفظ الترتيب الجديد في Supabase
     await rpc('fc_admin_reorder_questions', {
       p_ids: ordered.map(q => q.id)
     });
 
-    // إعادة تحميل اللوحة بعد الحفظ
     await refreshAdmin();
-
     toast('تم حفظ ترتيب الأسئلة بنجاح.');
   } catch (e) {
     toast(niceError(e));
@@ -670,11 +723,12 @@ async function moveQuestion(index, direction) {
 async function refreshAdmin() {
   const data = await rpc('fc_admin_data');
 
-  // ----- Question bank -----
   const questionsRoot = $('#adminQuestions');
 
   if (!questionsRoot) {
-    throw new Error('لم يتم العثور على عنصر بنك الأسئلة #adminQuestions في HTML.');
+    throw new Error(
+      'لم يتم العثور على عنصر بنك الأسئلة #adminQuestions في HTML.'
+    );
   }
 
   questionsRoot.innerHTML = '';
@@ -698,7 +752,6 @@ async function refreshAdmin() {
       const actions = document.createElement('div');
       actions.className = 'admin-actions';
 
-      // زر التحريك لأعلى
       const moveUp = document.createElement('button');
       moveUp.type = 'button';
       moveUp.className = 'btn btn-ghost';
@@ -708,24 +761,22 @@ async function refreshAdmin() {
       moveUp.disabled = index === 0 || adminBusy;
       moveUp.onclick = () => moveQuestion(index, -1);
 
-      // زر التحريك لأسفل
       const moveDown = document.createElement('button');
       moveDown.type = 'button';
       moveDown.className = 'btn btn-ghost';
       moveDown.textContent = '↓';
       moveDown.title = 'تحريك السؤال لأسفل';
       moveDown.setAttribute('aria-label', 'تحريك السؤال لأسفل');
-      moveDown.disabled = index === questions.length - 1 || adminBusy;
+      moveDown.disabled =
+        index === questions.length - 1 || adminBusy;
       moveDown.onclick = () => moveQuestion(index, 1);
 
-      // زر تعديل السؤال
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.className = 'btn btn-ghost';
       edit.textContent = 'تعديل';
       edit.onclick = () => questionEditor(q);
 
-      // زر حذف السؤال
       const del = document.createElement('button');
       del.type = 'button';
       del.className = 'btn btn-ghost';
@@ -734,7 +785,9 @@ async function refreshAdmin() {
       del.onclick = async () => {
         if (!confirm(
           'متأكد إنك عايز تحذف السؤال؟ الاختبارات القديمة ستظل محتفظة بنسخة أسئلتها.'
-        )) return;
+        )) {
+          return;
+        }
 
         try {
           await rpc('fc_admin_delete_question', {
@@ -768,17 +821,16 @@ async function refreshAdmin() {
           : '');
 
       item.append(top, opts);
-
-      // مهم: إضافة السؤال فعليًا إلى بنك الأسئلة
       questionsRoot.append(item);
     });
   }
 
-  // ----- Quizzes and answers -----
   const quizzesRoot = $('#adminQuizzes');
 
   if (!quizzesRoot) {
-    throw new Error('لم يتم العثور على عنصر الاختبارات #adminQuizzes في HTML.');
+    throw new Error(
+      'لم يتم العثور على عنصر الاختبارات #adminQuizzes في HTML.'
+    );
   }
 
   quizzesRoot.innerHTML = '';
@@ -833,7 +885,6 @@ async function refreshAdmin() {
 
     details.append(summary);
 
-    // إجابات صاحب الاختبار
     const creatorBlock = document.createElement('p');
     creatorBlock.className = 'admin-options';
 
@@ -855,7 +906,6 @@ async function refreshAdmin() {
 
     details.append(creatorBlock);
 
-    // إجابات الأصدقاء
     (q.participants || []).forEach(p => {
       const block = document.createElement('p');
 
@@ -906,7 +956,7 @@ async function adminLogin(event) {
 
     adminSession = data.session;
 
-    // التحقق من صلاحيات الأدمن وجلب البيانات
+    // التحقق من صلاحيات الأدمن
     await rpc('fc_admin_data');
 
     $('#adminLoginMessage').textContent = 'تم تسجيل الدخول بنجاح.';
@@ -925,7 +975,9 @@ async function adminLogin(event) {
 }
 
 async function adminLogout() {
-  if (sb) await sb.auth.signOut();
+  if (sb) {
+    await sb.auth.signOut();
+  }
 
   adminSession = null;
 
@@ -1029,15 +1081,16 @@ $('#confirmResult').addEventListener('click', () => {
   navigate('home');
 });
 
+/* أزرار الانتقال بين الصفحات */
 $$('.new-test-link').forEach(button => {
   button.addEventListener('click', () => {
-    $('#creatorForm').reset();
-
     const destination = button.dataset.go || 'creator';
-    navigate(destination);
 
     if (destination === 'creator') {
+      $('#creatorForm').reset();
       startCreator();
+    } else {
+      navigate(destination);
     }
   });
 });
@@ -1059,13 +1112,16 @@ $('#refreshAdmin').addEventListener('click', async () => {
 
 $('#adminLogout').addEventListener('click', adminLogout);
 
-window.addEventListener('hashchange', routeFromHash);
+/* زر العودة للرئيسية في صفحة النتائج */
+const resultBackHome = $('#resultBackHome');
 
-if (!sb) {
-  console.info(
-    'Friendship Challenge: تحقق من رابط Supabase والمفتاح العام.'
-  );
+if (resultBackHome) {
+  resultBackHome.addEventListener('click', () => {
+    navigate('home');
+  });
 }
+
+/* زر العودة للرئيسية في صفحة الأدمن */
 const adminBackHome = $('#adminBackHome');
 
 if (adminBackHome) {
@@ -1074,4 +1130,13 @@ if (adminBackHome) {
   });
 }
 
+window.addEventListener('hashchange', routeFromHash);
+
+if (!sb) {
+  console.info(
+    'Friendship Challenge: تحقق من رابط Supabase والمفتاح العام.'
+  );
+}
+
+/* بدء التطبيق */
 routeFromHash();
