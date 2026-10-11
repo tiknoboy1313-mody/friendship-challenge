@@ -294,6 +294,25 @@ answersLine.textContent =
 
 item.append(top, opts, answersLine);
 
+    const creatorAnswers = q.creator_answers || {};
+
+const creatorLine = document.createElement('p');
+creatorLine.className = 'admin-options';
+
+creatorLine.textContent =
+  'إجابات صاحب الاختبار: ' +
+  ((q.question_snapshot || []).map(question => {
+    const answer = creatorAnswers[question.id];
+
+    const answerText = Array.isArray(answer)
+      ? answer.join('، ')
+      : answer ?? 'لا توجد إجابة محفوظة';
+
+    return `${question.text}: ${answerText}`;
+  }).join(' | '));
+
+item.append(creatorLine);
+
   });
   const quizzes = $('#adminQuizzes'); quizzes.innerHTML = '';
   if (!data.quizzes?.length) quizzes.innerHTML = '<div class="loading">لا توجد اختبارات حتى الآن.</div>';
